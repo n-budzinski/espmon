@@ -23,12 +23,12 @@ class Status:
     def set_exchanger(self, dictionary):
         for sensor in dictionary:
             self.__e_values[sensor] = dictionary[sensor]
-        self.__e_values["last_update"] = datetime.now().strftime()
+        self.__e_values["last_update"] = datetime.now().strftime("%H:%M:%S")
 
     def set_heat_pump(self, dictionary):
         for sensor in dictionary:
             self.__p_values[sensor] = dictionary[sensor]
-        self.__p_values["last_update"] = datetime.now().strftime()
+        self.__p_values["last_update"] = datetime.now().strftime("%H:%M:%S")
 
     def get_exchanger(self):
         return self.__e_values
