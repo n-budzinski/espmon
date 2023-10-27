@@ -1,40 +1,31 @@
 from flask import Flask, request, render_template
-from datetime import datetime
+from json import dumps
+from typing import Dict
 
 class Status:
     def __init__(self) -> None:
-        self.__e_values = {
-            "r32in" : 0,
-            "r32out" : 0,
-            "waterin" : 0,
-            "waterout" : 0,
-            "last_update": None
-        }
-
-        self.__p_values = {
+        self.__values = {
+            "r32_in" : 0,
+            "r32_out" : 0,
+            "water_in" : 0,
+            "water_out" : 0,
             "power" : 0,
             "voltage" : 0,
             "amperage" : 0,
             "energy" : 0,
-            "frequency" : 0,
-            "last_update" : None
+            "frequency" : 0
         }
 
-    def set_exchanger(self, dictionary):
+    def set_values(self, dictionary: Dict[str, str]) -> None:
         for sensor in dictionary:
-            self.__e_values[sensor] = dictionary[sensor]
-        self.__e_values["last_update"] = datetime.now().strftime("%H:%M:%S")
+            if sensor in self.__values:
+                if dictionary[sensor].isnumeric():
+                    self.__values[sensor] = float(dictionary[sensor]) # type: ignore
+                else:
+                    self.__values[sensor] = dictionary[sensor] # type: ignore
 
-    def set_heat_pump(self, dictionary):
-        for sensor in dictionary:
-            self.__p_values[sensor] = dictionary[sensor]
-        self.__p_values["last_update"] = datetime.now().strftime("%H:%M:%S")
-
-    def get_exchanger(self):
-        return self.__e_values
-    
-    def get_heat_pump(self):
-        return self.__p_values
+    def get_values(self) -> Dict:
+        return self.__values
 
 status = Status()
 
@@ -43,28 +34,24 @@ app = Flask(
     static_folder="./static"
     )
 
-@app.route("/update_<string:mode>")
-def update(mode):
+@app.route("/set")
+def setter():
     if request.args:
-        if mode == "exchanger":
-            status.set_exchanger(request.args)
-        elif mode == "heat_pump":
-            status.set_heat_pump(request.args)
-        else:
-            return "ERR_BAD_MODE"
+        status.set_values(request.args)
         return "OK"
     else:
-        return "ERR_NO_VALUE"
-
+        return "NO_VALUE"
 
 @app.route("/")
 def index():
     return render_template(
         "./index.html",
-        e_values = status.get_exchanger(),
-        p_values = status.get_heat_pump()
+        variables = dumps(status.get_values()),
     )
 
+@app.route("/update")
+def update():
+    return dumps(status.get_values())
 
 def main():
     app.run(
